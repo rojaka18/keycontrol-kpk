@@ -17,19 +17,24 @@
   body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--ink);}
 
   .layout{display:flex;min-height:100vh;}
-  .sidebar{width:230px;flex-shrink:0;background:var(--primary);color:#fff;padding:18px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+  .sidebar{width:230px;flex-shrink:0;background:var(--primary);color:#fff;padding:18px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;transition:margin-left .25s, transform .25s;}
+  .layout.collapsed .sidebar{margin-left:-230px;}
   .brand{display:flex;align-items:center;gap:10px;padding:4px 6px 20px;}
   .brand .mark{width:34px;height:34px;border-radius:8px;background:var(--danger);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:13px;}
   .brand .bname{font-size:14px;font-weight:600;line-height:1.25;}
   .menu{display:flex;flex-direction:column;gap:3px;}
-  .menu .tab-btn{display:flex;align-items:center;gap:10px;width:100%;border:none;background:transparent;color:#DCE8E3;padding:11px 12px;border-radius:9px;font:500 14px var(--sans);cursor:pointer;text-align:left;position:relative;}
+  .menu .tab-btn{display:flex;align-items:center;gap:10px;width:100%;border:none;background:transparent;color:#DCE8E3;padding:11px 12px;border-radius:9px;font:500 14px var(--sans);cursor:pointer;text-align:left;}
   .menu .tab-btn:hover{background:rgba(255,255,255,.08);}
   .menu .tab-btn.active{background:rgba(255,255,255,.16);color:#fff;}
   .menu svg{width:18px;height:18px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px;}
   .side-foot{margin-top:auto;font:11px var(--mono);color:#9DB8AF;padding:0 6px;text-transform:uppercase;}
 
-  .content{flex:1;min-width:0;max-width:1180px;padding:28px 32px 60px;}
+  .content{flex:1;min-width:0;max-width:1180px;padding:20px 32px 60px;}
+  .topbar{margin-bottom:14px;}
+  .menu-toggle{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;cursor:pointer;}
+  .menu-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+  .scrim{display:none;}
   .page-head{margin-bottom:18px;} .page-head h1{font-size:20px;margin:0;} .page-head p{font-size:13px;color:var(--ink-soft);margin:3px 0 0;}
   .cols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start;}
   .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;}
@@ -83,20 +88,17 @@
   @media(max-width:1200px){.cols .grid{grid-template-columns:1fr;}}
   @media(max-width:900px){.cols{grid-template-columns:1fr;}}
   @media(max-width:760px){
-    .layout{flex-direction:column;}
-    .sidebar{position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;height:auto;flex-direction:row;padding:6px;z-index:50;}
-    .brand,.side-foot{display:none;}
-    .menu{flex-direction:row;width:100%;}
-    .menu .tab-btn{flex-direction:column;gap:3px;font-size:11px;padding:8px 4px;justify-content:center;text-align:center;}
-    .nav-badge{position:absolute;top:2px;right:14%;margin:0;}
-    .content{padding:18px 14px 100px;}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;height:100vh;z-index:60;transform:translateX(-100%);margin-left:0 !important;}
+    .layout.open .sidebar{transform:none;}
+    .layout.open .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:55;}
+    .content{padding:16px 14px 40px;}
     .stats{grid-template-columns:1fr;}
-    .toast{bottom:84px;}
   }
 </style>
 </head>
 <body>
 <div class="layout">
+  <div class="scrim" id="scrim"></div>
   <aside class="sidebar">
     <div class="brand"><div class="mark">KP</div><div class="bname">Key<br>Management</div></div>
     <nav class="menu">
@@ -108,6 +110,8 @@
   </aside>
 
   <main class="content">
+    <div class="topbar"><button class="menu-toggle" id="menuToggle" aria-label="Toggle menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button></div>
+
     <section class="panel active" id="panel-box">
       <div class="page-head"><h1>Generate box barcode</h1><p>Create a box ID and print its QR label.</p></div>
       <div class="cols">
@@ -205,7 +209,13 @@ function getPublicBaseUrl(){
 }
 
 /* ============ NAVIGASI ============ */
+const layoutEl = document.querySelector('.layout');
+const isMobile = () => matchMedia('(max-width:760px)').matches;
+document.getElementById('menuToggle').onclick = () => layoutEl.classList.toggle(isMobile() ? 'open' : 'collapsed');
+document.getElementById('scrim').onclick = () => layoutEl.classList.remove('open');
+
 function showTab(tab){
+  layoutEl.classList.remove('open');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+tab));
   if(tab==='riwayat') renderRiwayat();
