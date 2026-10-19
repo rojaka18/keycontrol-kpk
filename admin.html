@@ -293,10 +293,38 @@ function getQrDataUrl(containerId){
 function downloadQr(){
   const dataUrl = getQrDataUrl('boxQr');
   if(!dataUrl){ showToast('QR belum siap'); return; }
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = 'barcode-' + currentLabel.id + '.png';
-  a.click();
+  const link = getPublicBaseUrl() + '?box=' + encodeURIComponent(currentLabel.id);
+  const img = new Image();
+  img.onload = () => {
+    const W = 900, H = 360, TX = 370, MAXW = W - TX - 30;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(img, 30, 30, 300, 300);
+
+    ctx.fillStyle = '#0F332D'; ctx.textBaseline = 'alphabetic';
+    let fs = 40;
+    do{ ctx.font = `700 ${fs}px 'IBM Plex Mono','Courier New',monospace`; fs -= 2; }
+    while(ctx.measureText(currentLabel.id).width > MAXW && fs > 16);
+    ctx.fillText(currentLabel.id, TX, 110);
+
+    ctx.fillStyle = '#333'; ctx.font = "500 28px Inter,Arial,sans-serif";
+    ctx.fillText(currentLabel.nama, TX, 160, MAXW);
+
+    ctx.fillStyle = '#666'; ctx.font = "20px 'IBM Plex Mono','Courier New',monospace";
+    let line = '', y = 215;
+    for(const ch of link){
+      if(ctx.measureText(line + ch).width > MAXW){ ctx.fillText(line, TX, y); y += 26; line = ch; }
+      else line += ch;
+    }
+    if(line) ctx.fillText(line, TX, y);
+
+    const a = document.createElement('a');
+    a.href = c.toDataURL('image/png');
+    a.download = 'label-' + currentLabel.id + '.png';
+    a.click();
+  };
+  img.src = dataUrl;
 }
 
 function printLabel(){
