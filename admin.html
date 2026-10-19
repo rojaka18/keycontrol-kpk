@@ -302,19 +302,29 @@ function downloadQr(){
 function printLabel(){
   const dataUrl = getQrDataUrl('boxQr');
   if(!dataUrl){ showToast('QR belum siap'); return; }
+  const link = getPublicBaseUrl() + '?box=' + encodeURIComponent(currentLabel.id);
   const w = window.open('', '_blank');
   w.document.write(`
     <html><head><title>Label ${esc(currentLabel.id)}</title>
     <style>
-      body{font-family:sans-serif;text-align:center;padding:40px;}
-      img{width:220px;height:220px;}
-      .id{font-family:monospace;font-size:22px;font-weight:700;margin-top:10px;}
-      .name{font-size:14px;color:#555;margin-top:4px;}
+      @page{margin:4mm;}
+      *{box-sizing:border-box;}
+      body{margin:0;font-family:sans-serif;}
+      .label{display:flex;align-items:center;gap:4mm;width:max-content;max-width:100%;break-inside:avoid;page-break-inside:avoid;}
+      img{width:32mm;height:32mm;flex-shrink:0;}
+      .id{font-family:monospace;font-size:13pt;font-weight:700;word-break:break-all;}
+      .name{font-size:10pt;color:#333;margin-top:1mm;}
+      .link{font-size:6.5pt;color:#555;margin-top:2mm;word-break:break-all;font-family:monospace;max-width:55mm;}
     </style></head>
     <body>
-      <img src="${dataUrl}">
-      <div class="id">${esc(currentLabel.id)}</div>
-      <div class="name">${esc(currentLabel.nama)}</div>
+      <div class="label">
+        <img src="${dataUrl}">
+        <div>
+          <div class="id">${esc(currentLabel.id)}</div>
+          <div class="name">${esc(currentLabel.nama)}</div>
+          <div class="link">${esc(link)}</div>
+        </div>
+      </div>
       <script>window.onload = () => { window.print(); }<\/script>
     </body></html>
   `);
