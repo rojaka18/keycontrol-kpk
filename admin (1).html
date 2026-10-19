@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F6F4; --surface:#FFFFFF; --ink:#182620; --ink-soft:#5B6D64;
+    --primary:#1B4B43; --primary-dark:#0F332D; --accent-soft:#F6E4C8;
+    --line:#DDE3DE; --danger:#B3432D; --ok:#2E7D4F;
+    --mono:'IBM Plex Mono','Courier New',monospace; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--ink);}
+  .app{max-width:820px;margin:0 auto;padding:20px 16px 60px;}
+  header.top{display:flex;align-items:center;gap:10px;padding:18px 4px 22px;border-bottom:2px solid var(--danger);margin-bottom:20px;}
+  header.top .mark{width:34px;height:34px;border-radius:8px;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:13px;}
+  header.top h1{font-size:16px;margin:0;} header.top .sub{font-size:11px;color:var(--ink-soft);font-family:var(--mono);text-transform:uppercase;}
+
+  nav.tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--surface);padding:5px;border-radius:12px;border:1px solid var(--line);}
+  nav.tabs button{flex:1;border:none;background:transparent;padding:10px 12px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;}
+  nav.tabs button.active{background:var(--primary);color:#fff;}
+
+  section.panel{display:none;} section.panel.active{display:block;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .card h2{font-size:15px;margin:0 0 4px;}
+  .card .desc{font-size:12.5px;color:var(--ink-soft);margin:0 0 18px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:560px){.grid{grid-template-columns:1fr;}}
+  label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+  input{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:#fff;color:var(--ink);}
+  input:focus{outline:none;border-color:var(--primary);}
+  .mono-input{font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;}
+  .field{margin-bottom:14px;} .field.span2{grid-column:1/-1;}
+
+  button.btn{border:none;border-radius:9px;padding:11px 18px;font-weight:600;font-size:13.5px;cursor:pointer;}
+  .btn-primary{background:var(--primary);color:#fff;} .btn-primary:hover{background:var(--primary-dark);}
+  .btn-outline{background:transparent;border:1.5px solid var(--line);color:var(--ink);}
+  .btn-outline:hover{border-color:var(--primary);}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+
+  .label-preview{display:flex;gap:18px;align-items:center;background:var(--bg);border:2px dashed var(--line);border-radius:12px;padding:18px;margin-top:16px;}
+  .label-preview .qr-box{background:#fff;padding:8px;border-radius:8px;flex-shrink:0;width:96px;height:96px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+  .label-preview .qr-box canvas, .label-preview .qr-box img{width:96px !important;height:96px !important;display:block;}
+  .label-preview .info .id{font-family:var(--mono);font-size:18px;font-weight:600;letter-spacing:1px;color:var(--primary-dark);}
+  .label-preview .info .name{font-size:13px;color:var(--ink-soft);margin-top:2px;}
+  .label-preview .info .link{font-size:10.5px;color:var(--ink-soft);margin-top:6px;word-break:break-all;font-family:var(--mono);}
+  .empty-hint{font-size:12.5px;color:var(--ink-soft);font-style:italic;}
+
+  .search-row{display:flex;gap:10px;margin-bottom:14px;}
+  .search-row input{flex:1;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-soft);padding:8px 10px;border-bottom:2px solid var(--line);}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);} tr:last-child td{border-bottom:none;}
+  .aksi-pinjam{color:var(--danger);font-weight:600;} .aksi-kembali{color:var(--ok);font-weight:600;}
+
+  .badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;white-space:nowrap;}
+  .badge.tersedia{background:#DCF0E3;color:var(--ok);} .badge.dipinjam{background:#FBE4DD;color:var(--danger);} .badge.unknown{background:#eee;color:var(--ink-soft);}
+
+  .dur{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .dur-red{background:#FBE4DD;color:var(--danger);} .dur-amber{background:#F6E4C8;color:#854F0B;} .dur-ok{background:#DCF0E3;color:var(--ok);}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--primary-dark);color:#fff;padding:12px 20px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;pointer-events:none;z-index:99;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="mark">KMY</div>
+    <div><h1>Dashboard Admin - Key Management</h1><div class="sub">Engineered by 7000656</div></div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="box">Generate Box Barcode</button>
+    <button class="tab-btn" data-tab="riwayat">History</button>
+    <button class="tab-btn" data-tab="lokasi">Key Location</button>
+  </nav>
+
+  <section class="panel active" id="panel-box">
+    <div class="card">
+      <h2>Create the BOX ID</h2>
+      <p class="desc">The boxes are assigned an identification number (BOX ID) to identify them.</p>
+      <div class="grid">
+        <div class="field"><label>ID Box (unique)</label><input type="text" id="boxId" placeholder="BOX-KM100001-KM100100"></div>
+        <div class="field"><label>Box Name</label><input type="text" id="boxNama" placeholder="Box1"></div>
+        <div class="field"><label>Category</label><input type="text" id="boxKategori" placeholder="Spare-key"></div>
+        <div class="field"><label>Location</label><input type="text" id="boxLokasi" placeholder="Gudang Lt1"></div>
+        <div class="field span2"><label>Option</label><input type="text" id="boxCatatan"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="simpanBox()">Save &amp; Generate Barcode</button>
+        <button class="btn btn-outline" onclick="clearBoxForm()">Reset</button>
+      </div>
+      <div id="boxLabelPreview"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-riwayat">
+    <div class="card">
+      <div id="hangingBox" style="margin-bottom:28px;"></div>
+      <p class="desc">Search by number plate.</p>
+      <div class="search-row">
+        <input type="text" id="searchLog" placeholder="B1234SLC" oninput="renderRiwayat()">
+        <button class="btn btn-outline" onclick="exportCsv()">Export CSV</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Date time</th><th>Box Id</th><th>Plate</th><th>Action</th><th>Name</th><th>Reason</th></tr></thead>
+          <tbody id="riwayatBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-lokasi">
+    <div class="card">
+      <h2>Location Key Check</h2>
+      <p class="desc">Enter the License plate to see in which box this key was last recorded, and its current status.</p>
+      <div class="search-row">
+        <input type="text" id="lokasiKeyId" class="mono-input" placeholder="Search">
+        <button class="btn btn-primary" onclick="cekLokasi()">Check</button>
+      </div>
+      <div id="lokasiResult"></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CONFIG = { SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbz3CeI48rpL9ULzmHe245Qfqi5alWZ63ErDG5t4OctaFVW2R7uRF3ruLurNqcCCsaO60g/exec' };
+let state = { boxes: [], log: [] };
+let currentLabel = { id:'', nama:'' };
+
+function scriptReady(){ return CONFIG.SCRIPT_URL && CONFIG.SCRIPT_URL.indexOf('https://script.google.com') === 0; }
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function apiCall(action, data){
+  if(!scriptReady()){ showToast('Apps Script URL belum di-setup.'); return { success:false, error:'not-configured' }; }
+  try{
+    const res = await fetch(CONFIG.SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action, data }) });
+    return await res.json();
+  }catch(err){ showToast('Gagal menghubungi server: '+err.message); return { success:false, error:err.message }; }
+}
+
+async function loadAllData(){
+  if(!scriptReady()) return;
+  const res = await apiCall('getAll');
+  if(res && res.success){ state.boxes = res.boxes||[]; state.log = res.log||[]; }
+  if(document.getElementById('panel-riwayat').classList.contains('active')) renderRiwayat();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function getPublicBaseUrl(){
+  const path = window.location.pathname.replace(/admin\.html$/, 'index.html');
+  return window.location.origin + path;
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='riwayat') renderRiwayat();
+  });
+});
+
+/* ============ BUAT BOX ============ */
+function clearBoxForm(){
+  ['boxId','boxNama','boxKategori','boxLokasi','boxCatatan'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('boxLabelPreview').innerHTML='';
+}
+
+async function simpanBox(){
+  const id = document.getElementById('boxId').value.trim().toUpperCase();
+  const nama = document.getElementById('boxNama').value.trim();
+  const kategori = document.getElementById('boxKategori').value.trim();
+  const lokasi = document.getElementById('boxLokasi').value.trim();
+  const catatan = document.getElementById('boxCatatan').value.trim();
+  if(!id || !nama){ showToast('Box ID dan Nama Box wajib diisi'); return; }
+  if(!/^[A-Z0-9_\- ]+$/.test(id)){ showToast('Box ID hanya boleh huruf, angka, spasi, - dan _'); return; }
+  if(state.boxes.some(b=>b.id===id)){ showToast('Box ID "'+id+'" sudah dipakai'); return; }
+
+  const newBox = { id, nama, kategori, lokasi, catatan, createdAt:new Date().toISOString() };
+  showToast('Menyimpan box...');
+  const res = await apiCall('addBox', newBox);
+  if(!res.success){ showToast('Gagal simpan: '+(res.error||'')); return; }
+  state.boxes.push(newBox);
+  showToast('Box "'+id+'" berhasil disimpan');
+  renderLabelPreview(id, nama);
+}
+
+function renderLabelPreview(id, nama){
+  currentLabel = { id, nama: nama||'' };
+  const link = getPublicBaseUrl() + '?box=' + encodeURIComponent(id);
+  const wrap = document.getElementById('boxLabelPreview');
+  wrap.innerHTML = `<div class="label-preview"><div class="qr-box" id="boxQr"></div>
+    <div class="info"><div class="id">${esc(id)}</div><div class="name">${esc(nama||'')}</div><div class="link">${esc(link)}</div>
+    <div class="btn-row" style="margin-top:10px;">
+      <button class="btn btn-outline" onclick="downloadQr()">⬇ Download PNG</button>
+      <button class="btn btn-outline" onclick="printLabel()">🖨 Print Label</button>
+    </div>
+    </div></div>`;
+  new QRCode(document.getElementById('boxQr'), { text: link, width:300, height:300, colorDark:'#0F332D', colorLight:'#ffffff' });
+}
+
+function getQrDataUrl(containerId){
+  const canvas = document.querySelector('#'+containerId+' canvas');
+  if(canvas) return canvas.toDataURL('image/png');
+  const img = document.querySelector('#'+containerId+' img');
+  return img ? img.src : null;
+}
+
+function downloadQr(){
+  const dataUrl = getQrDataUrl('boxQr');
+  if(!dataUrl){ showToast('QR belum siap'); return; }
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = 'barcode-' + currentLabel.id + '.png';
+  a.click();
+}
+
+function printLabel(){
+  const dataUrl = getQrDataUrl('boxQr');
+  if(!dataUrl){ showToast('QR belum siap'); return; }
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>Label ${esc(currentLabel.id)}</title>
+    <style>
+      body{font-family:sans-serif;text-align:center;padding:40px;}
+      img{width:220px;height:220px;}
+      .id{font-family:monospace;font-size:22px;font-weight:700;margin-top:10px;}
+      .name{font-size:14px;color:#555;margin-top:4px;}
+    </style></head>
+    <body>
+      <img src="${dataUrl}">
+      <div class="id">${esc(currentLabel.id)}</div>
+      <div class="name">${esc(currentLabel.nama)}</div>
+      <script>window.onload = () => { window.print(); }<\/script>
+    </body></html>
+  `);
+  w.document.close();
+}
+
+/* ============ RIWAYAT ============ */
+function durasi(waktu){
+  const m = Math.max(0, Math.floor((Date.now() - new Date(waktu)) / 60000));
+  const h = Math.floor(m/60), d = Math.floor(h/24);
+  const txt = d>0 ? `${d}hr ${h%24}j` : h>0 ? `${h}j ${m%60}m` : `${m}m`;
+  const cls = h>=24 ? 'dur-red' : h>=12 ? 'dur-amber' : 'dur-ok';
+  return `<span class="dur ${cls}">${txt}</span>`;
+}
+
+function renderHanging(){
+  const byKey = {};
+  state.log.forEach(l=>{ if(l.keyId) byKey[l.keyId] = l; });
+  const hanging = Object.keys(byKey).filter(k=>byKey[k].aksi==='pinjam').map(k=>byKey[k])
+    .sort((a,b)=>new Date(a.waktu)-new Date(b.waktu));
+
+  const el = document.getElementById('hangingBox');
+  if(hanging.length===0){ el.innerHTML=''; return; }
+  el.innerHTML = `
+    <div class="card" style="border-color:var(--danger);margin-bottom:20px;">
+      <h2 style="color:var(--danger);">Total not yet repatriated = ${hanging.length}</h2>
+      <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>plate</th><th>Box ID</th><th>Taken by</th><th>Date time</th><th>Duration</th></tr></thead>
+        <tbody>
+          ${hanging.map(l=>`<tr><td>${esc(l.keyId)}</td><td>${esc(l.boxId)}</td><td>${esc(l.nama||'-')}</td><td>${new Date(l.waktu).toLocaleString('id-ID')}</td><td>${durasi(l.waktu)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      </div>
+    </div>`;
+}
+
+function getFilteredLog(){
+  const q = (document.getElementById('searchLog').value||'').toLowerCase();
+  return state.log.slice().reverse().filter(l =>
+    (l.keyId||'').toLowerCase().includes(q) ||
+    (l.boxId||'').toLowerCase().includes(q) ||
+    (l.nama||'').toLowerCase().includes(q)
+  );
+}
+
+function renderRiwayat(){
+  renderHanging();
+  const body = document.getElementById('riwayatBody');
+  const filtered = getFilteredLog();
+  if(filtered.length===0){ body.innerHTML='<tr><td colspan="6" class="empty-hint">History not yet</td></tr>'; return; }
+  body.innerHTML = filtered.map(l=>`
+    <tr>
+      <td>${new Date(l.waktu).toLocaleString('id-ID')}</td>
+      <td>${esc(l.boxId||'-')}</td><td>${esc(l.keyId||'-')}</td>
+      <td class="${l.aksi==='pinjam'?'aksi-pinjam':'aksi-kembali'}">${l.aksi==='pinjam'?'Pinjam':'Kembalikan'}</td>
+      <td>${esc(l.nama||'-')}</td><td>${esc(l.catatan||'-')}</td>
+    </tr>`).join('');
+}
+
+function exportCsv(){
+  const rows = getFilteredLog();
+  if(!rows.length){ showToast('Tidak ada data'); return; }
+  const q = v => '"' + String(v==null?'':v).replace(/"/g,'""') + '"';
+  const lines = [['Waktu','Box','Plat','Aksi','Nama','Alasan'].map(q).join(',')]
+    .concat(rows.map(l=>[new Date(l.waktu).toLocaleString('id-ID'), l.boxId, l.keyId, l.aksi, l.nama, l.catatan].map(q).join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff'+lines.join('\n')], {type:'text/csv;charset=utf-8'}));
+  a.download = 'riwayat-key-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ============ CEK LOKASI KEY ============ */
+function cekLokasi(){
+  const id = document.getElementById('lokasiKeyId').value.trim().toUpperCase();
+  const result = document.getElementById('lokasiResult');
+  if(!id){ showToast('Masukkan Key ID dulu'); return; }
+
+  const entries = state.log.filter(l=>l.keyId===id);
+  if(entries.length===0){
+    result.innerHTML = `<p class="empty-hint">Belum ada riwayat untuk Key ID "${esc(id)}".</p>`;
+    return;
+  }
+  const last = entries[entries.length-1];
+  const box = state.boxes.find(b=>b.id===last.boxId);
+  const isTersedia = last.aksi === 'kembali';
+
+  result.innerHTML = `
+    <div class="card" style="margin-top:0;">
+      <h2>${esc(id)}</h2>
+      <p class="desc">Last recorded in the box: <strong>${esc(box ? box.id+' — '+box.nama : (last.boxId||'-'))}</strong></p>
+      <span class="badge ${isTersedia?'tersedia':'dipinjam'}">${isTersedia?'Available':'Taken by '+esc(last.nama||'-')}</span>
+      <p class="desc" style="margin-top:14px;">History:</p>
+      <table>
+        <thead><tr><th>Waktu</th><th>Box</th><th>Aksi</th><th>Name</th></tr></thead>
+        <tbody>
+          ${entries.slice().reverse().map(l=>`
+            <tr><td>${new Date(l.waktu).toLocaleString('id-ID')}</td><td>${esc(l.boxId)}</td>
+            <td class="${l.aksi==='pinjam'?'aksi-pinjam':'aksi-kembali'}">${l.aksi==='pinjam'?'Pinjam':'Kembalikan'}</td>
+            <td>${esc(l.nama||'-')}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* ============ INIT ============ */
+loadAllData();
+</script>
+</body>
+</html>

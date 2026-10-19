@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scan Key Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F6F4; --surface:#FFFFFF; --ink:#182620; --ink-soft:#5B6D64;
+    --primary:#1B4B43; --primary-dark:#0F332D; --accent-soft:#F6E4C8;
+    --line:#DDE3DE; --danger:#B3432D; --ok:#2E7D4F;
+    --mono:'IBM Plex Mono','Courier New',monospace; --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--ink);}
+  .app{max-width:640px;margin:0 auto;padding:20px 16px 60px;}
+  header.top{display:flex;align-items:center;gap:10px;padding:18px 4px 22px;border-bottom:2px solid var(--primary);margin-bottom:20px;}
+  header.top .mark{width:34px;height:34px;border-radius:8px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:14px;}
+  header.top h1{font-size:16px;margin:0;} header.top .sub{font-size:11px;color:var(--ink-soft);font-family:var(--mono);text-transform:uppercase;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .card h2{font-size:15px;margin:0 0 4px;} .card h3{font-size:13.5px;margin:0 0 4px;}
+  .card .desc{font-size:12.5px;color:var(--ink-soft);margin:0 0 18px;}
+  label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+  input{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:#fff;color:var(--ink);}
+  input:focus{outline:none;border-color:var(--primary);}
+  .field{margin-bottom:14px;}
+
+  button.btn{border:none;border-radius:9px;padding:11px 18px;font-weight:600;font-size:13.5px;cursor:pointer;}
+  button.btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-primary{background:var(--primary);color:#fff;} .btn-primary:hover{background:var(--primary-dark);}
+  .btn-accent{background:#D98F2B;color:#fff;}
+  .btn-outline{background:transparent;border:1.5px solid var(--line);color:var(--ink);}
+  .btn-outline:hover{border-color:var(--primary);}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+
+  nav.subtabs{display:flex;gap:6px;margin-bottom:16px;background:var(--bg);padding:5px;border-radius:12px;border:1px solid var(--line);}
+  nav.subtabs button{flex:1;border:none;background:transparent;padding:10px 12px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;}
+  nav.subtabs button.active{background:var(--primary);color:#fff;}
+
+  #reader,#reader-boxhub{border-radius:12px;overflow:hidden;border:1px solid var(--line);}
+  .scan-manual{display:flex;gap:8px;margin-bottom:14px;}
+  .scan-manual input{flex:1;}
+
+  .idchip{font-family:var(--mono);font-weight:600;font-size:13px;background:var(--accent-soft);color:var(--primary-dark);padding:4px 9px;border-radius:6px;letter-spacing:.5px;}
+  .badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;white-space:nowrap;}
+  .badge.tersedia{background:#DCF0E3;color:var(--ok);} .badge.dipinjam{background:#FBE4DD;color:var(--danger);}
+  .key-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .key-item:last-child{border-bottom:none;}
+  .kid{font-family:var(--mono);font-size:13px;}
+  .empty-hint{font-size:12.5px;color:var(--ink-soft);font-style:italic;}
+
+  .keyhub-summary{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .keyhub-summary .stat{flex:1;min-width:90px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:center;}
+  .keyhub-summary .stat .num{font-size:19px;font-weight:700;font-family:var(--mono);}
+  .keyhub-summary .stat .lbl{font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--primary-dark);color:#fff;padding:12px 20px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;pointer-events:none;z-index:99;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="mark">KMY</div>
+    <div><h1>Scan Key Management</h1><div class="sub">Engineered by 7000656</div></div>
+  </header>
+
+  <div id="mainArea">
+    <div class="card">
+      <h2>Scan Barcode Box</h2>
+      <p class="desc">Point the camera at the barcode on the box, or enter the box ID manually.</p>
+      <div class="scan-manual">
+        <input type="text" id="manualBoxId" placeholder="Type Box Id manually">
+        <button class="btn btn-outline" onclick="lookupManualBox()">Search</button>
+      </div>
+      <div id="reader" style="width:100%"></div>
+      <div class="btn-row">
+        <button class="btn btn-outline" id="scanToggleBtn" onclick="toggleScanner()">Open Camera</button>
+        <button class="btn btn-outline" id="flipBtn">Change the Camera</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,51,45,0.55);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+  <div style="width:44px;height:44px;border:4px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;"></div>
+  <div style="color:#fff;font-size:14px;font-weight:600;">Loading...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+
+<script>
+/* ============ CONFIG & DATA ============ */
+const CONFIG = { SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbz3CeI48rpL9ULzmHe245Qfqi5alWZ63ErDG5t4OctaFVW2R7uRF3ruLurNqcCCsaO60g/exec' };
+let state = { boxes: [], log: [], keyMaster: [] };
+let busy = false;
+let cameraMode = false;
+const SCAN_HOME = document.getElementById('mainArea').innerHTML;
+
+function scriptReady(){ return CONFIG.SCRIPT_URL && CONFIG.SCRIPT_URL.indexOf('https://script.google.com') === 0; }
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function clean(s){ return String(s||'').replace(/[^A-Z0-9_\- ]/g,''); }
+function getNames(){ try{ return JSON.parse(localStorage.getItem('kmy_names')||'[]'); }catch(e){ return []; } }
+function saveName(n){
+  try{
+    const a = getNames().filter(x=>x.toLowerCase()!==n.toLowerCase());
+    a.unshift(n);
+    localStorage.setItem('kmy_names', JSON.stringify(a.slice(0,15)));
+  }catch(e){}
+}
+
+async function apiCall(action, data){
+  if(!scriptReady()){ showToast('Sistem belum di-setup, hubungi admin.'); return { success:false, error:'not-configured' }; }
+  try{
+    const res = await fetch(CONFIG.SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action, data }) });
+    return await res.json();
+  }catch(err){ showToast('Gagal menghubungi server: '+err.message); return { success:false, error:err.message }; }
+}
+
+function showLoading(){ document.getElementById('loadingOverlay').style.display='flex'; }
+function hideLoading(){ document.getElementById('loadingOverlay').style.display='none'; }
+
+async function loadAllData(){
+  if(!scriptReady()) return;
+  showLoading();
+  const res = await apiCall('getAll');
+  hideLoading();
+  if(res && res.success){ state.boxes = res.boxes||[]; state.log = res.log||[]; state.keyMaster = res.keyMaster||[]; }
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============ LOGIKA INTI ============ */
+function entriesForKey(keyId){ return state.log.filter(l=>l.keyId===keyId); }
+
+function latestEntryForKey(keyId){
+  const entries = entriesForKey(keyId);
+  return entries.length ? entries[entries.length-1] : null;
+}
+
+function keysCurrentlyInBox(boxId){
+  const byKey = {};
+  state.log.forEach(l=>{ if(l.keyId) byKey[l.keyId] = l; });
+  return Object.keys(byKey)
+    .filter(keyId => byKey[keyId].boxId === boxId)
+    .map(keyId => ({ keyId, lastEntry: byKey[keyId] }));
+}
+
+/* ============ SCANNER ============ */
+let html5QrCode=null, scannerActive=false, currentCameraIndex=0, cameraList=[];
+
+async function getCameras(){
+  if(cameraList.length>0) return cameraList;
+  try{ cameraList = await Html5Qrcode.getCameras(); } catch(e){ cameraList=[]; }
+  return cameraList;
+}
+
+async function startScanner(readerElementId, onResult){
+  if(scannerActive) stopScanner();
+  const cameras = await getCameras();
+  const cameraConfig = cameras.length>0
+    ? { deviceId:{ exact: cameras[Math.min(currentCameraIndex, cameras.length-1)].id } }
+    : { facingMode:'environment' };
+  html5QrCode = new Html5Qrcode(readerElementId);
+  html5QrCode.start(cameraConfig, {fps:15, qrbox:220},
+    (decodedText)=>{ stopScanner(); if(navigator.vibrate) navigator.vibrate(60); onResult(decodedText); }, ()=>{}
+  ).then(()=>{ scannerActive=true; }).catch(()=>{ showToast('Kamera tidak bisa diakses.'); });
+}
+
+function stopScanner(){ if(html5QrCode && scannerActive) html5QrCode.stop().catch(()=>{}); scannerActive=false; }
+
+async function flipCamera(readerElementId, onResult){
+  const cameras = await getCameras();
+  if(cameras.length<2){ showToast('Tidak ada kamera lain'); return; }
+  currentCameraIndex = (currentCameraIndex+1) % cameras.length;
+  startScanner(readerElementId, onResult);
+}
+
+function parseScannedValue(raw){
+  const text=(raw||'').trim();
+  try{ const url=new URL(text);
+    const k=url.searchParams.get('key'); if(k) return { type:'key', id:clean(k.trim().toUpperCase()) };
+    const b=url.searchParams.get('box'); if(b) return { type:'box', id:clean(b.trim().toUpperCase()) };
+  }catch(e){}
+  const upper = clean(extractPlate(text.toUpperCase()));
+  if(state.boxes.some(b => b.id === upper)) return { type:'box', id:upper };
+  return { type:'key', id:upper };
+}
+
+function extractPlate(raw){
+  const match = raw.match(/^(.*?)(KM\d+)$/);
+  return match ? match[1] : raw;
+}
+
+/* ============ ENTRY: SCAN BARCODE BOX ============ */
+function toggleScanner(){
+  const btn = document.getElementById('scanToggleBtn');
+  if(scannerActive){ stopScanner(); btn.textContent='Open Camera'; return; }
+  btn.textContent='Stop Camera';
+  const onResult = (raw)=>{
+    btn.textContent='Open Camera';
+    const parsed = parseScannedValue(raw);
+    if(parsed.type==='key') showKeyDetail(parsed.id, null);
+    else renderBoxHub(parsed.id, 'scankey');
+  };
+  startScanner('reader', onResult);
+  const flipBtn = document.getElementById('flipBtn');
+  if(flipBtn) flipBtn.onclick = ()=>flipCamera('reader', onResult);
+}
+
+function lookupManualBox(){
+  const val = document.getElementById('manualBoxId').value.trim();
+  if(!val){ showToast('Masukkan Box ID dulu'); return; }
+  const parsed = parseScannedValue(val);
+  if(parsed.type==='key') showKeyDetail(parsed.id, null);
+  else renderBoxHub(parsed.id, 'scankey');
+}
+
+/* ============ BOX HUB ============ */
+function renderBoxHub(boxId, activeSub){
+  stopScanner();
+  const box = state.boxes.find(b=>b.id===boxId);
+  const area = document.getElementById('mainArea');
+  if(!box){
+    area.innerHTML = `<div class="card"><p class="empty-hint">Box ID "${esc(boxId)}" not found.</p>
+      <button class="btn btn-outline" onclick="resetToScan()">Try again</button></div>`;
+    return;
+  }
+  const keysInBox = keysCurrentlyInBox(box.id);
+  const tersediaCount = keysInBox.filter(k=>k.lastEntry.aksi==='kembali').length;
+  const dipinjamCount = keysInBox.length - tersediaCount;
+
+  area.innerHTML = `
+    <div class="card">
+      <h2>${esc(box.nama)} <span class="idchip">${esc(box.id)}</span></h2>
+      <p class="desc">${esc(box.kategori||'-')} · ${esc(box.lokasi||'-')}</p>
+      <div class="keyhub-summary">
+        <div class="stat"><div class="num">${keysInBox.length}</div><div class="lbl">Total Key</div></div>
+        <div class="stat"><div class="num" style="color:var(--ok);">${tersediaCount}</div><div class="lbl">Available</div></div>
+        <div class="stat"><div class="num" style="color:var(--danger);">${dipinjamCount}</div><div class="lbl">Taken</div></div>
+      </div>
+      <nav class="subtabs">
+        <button class="${activeSub==='scankey'?'active':''}" onclick="renderBoxHub('${esc(box.id)}','scankey')">Scan Key</button>
+        <button class="${activeSub==='listkey'?'active':''}" onclick="renderBoxHub('${esc(box.id)}','listkey')">List Key</button>
+      </nav>
+      <div id="boxHubContent"></div>
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn btn-outline" onclick="resetToScan()">← Scan Other Box</button>
+      </div>
+    </div>
+  `;
+  if(activeSub==='listkey') renderBoxHubListKey(keysInBox);
+  else renderBoxHubScanKey(box);
+}
+
+function renderBoxHubListKey(keysInBox){
+  const content = document.getElementById('boxHubContent');
+  if(keysInBox.length===0){
+    content.innerHTML='<p class="empty-hint">No keys have been registered in this box yet. Scan a key to begin.</p>'; return;
+  }
+  content.innerHTML = `
+    <div class="scan-manual" style="margin-bottom:10px;">
+      <input type="text" id="listKeySearch" placeholder="Search plate number..." oninput="filterListKey()">
+    </div>
+    <div id="listKeyResult"></div>
+  `;
+  window._keysInBox = keysInBox;
+  filterListKey();
+}
+
+function filterListKey(){
+  const q = (document.getElementById('listKeySearch')?.value||'').toLowerCase();
+  const filtered = (window._keysInBox||[]).filter(({keyId})=>{
+    const master = state.keyMaster.find(k=>k.keyId===keyId);
+    const label = master ? master.plateNumber : keyId;
+    return String(label).toLowerCase().includes(q) || keyId.toLowerCase().includes(q);
+  });
+  const el = document.getElementById('listKeyResult');
+  if(!el) return;
+  el.innerHTML = filtered.length===0 ? '<p class="empty-hint">Not found.</p>'
+    : filtered.map(({keyId,lastEntry})=>{
+        const isTersedia = lastEntry.aksi==='kembali';
+        const master = state.keyMaster.find(k=>k.keyId===keyId);
+        const label = master ? master.plateNumber : keyId;
+        return `<div class="key-item">
+          <div class="kid">${esc(label)}</div>
+          <span class="badge ${isTersedia?'tersedia':'dipinjam'}">${isTersedia?'Available':'Taken: '+esc(lastEntry.nama||'-')}</span>
+        </div>`;
+      }).join('');
+}
+
+function renderBoxHubScanKey(box){
+  const content = document.getElementById('boxHubContent');
+  content.innerHTML = `
+    <div class="scan-manual">
+      <input type="text" id="boxHubManualKey" placeholder="Scan plate manual">
+      <button class="btn btn-outline" onclick="boxHubLookupManual('${esc(box.id)}')">Search</button>
+    </div>
+    <div id="reader-boxhub" style="width:100%"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" id="boxHubScanBtn" onclick="toggleBoxHubScanner('${esc(box.id)}')">Open Camera</button>
+      <button class="btn btn-outline" id="boxHubFlipBtn">Change the camera</button>
+    </div>
+    <div id="boxHubKeyResult" style="margin-top:14px;"></div>
+  `;
+}
+
+function toggleBoxHubScanner(boxId){
+  const btn = document.getElementById('boxHubScanBtn');
+  if(!btn) return;
+  if(scannerActive){ stopScanner(); cameraMode=false; btn.textContent='Open Camera'; return; }
+  btn.textContent='Stop Camera';
+  cameraMode = true;
+  const onResult = (raw)=>{
+    btn.textContent='Open Camera';
+    const parsed = parseScannedValue(raw);
+    showKeyDetail(parsed.id, boxId);
+  };
+  startScanner('reader-boxhub', onResult);
+  const flipBtn = document.getElementById('boxHubFlipBtn');
+  if(flipBtn) flipBtn.onclick = ()=>flipCamera('reader-boxhub', onResult);
+}
+
+function boxHubLookupManual(boxId){
+  const val = document.getElementById('boxHubManualKey').value.trim();
+  if(!val){ showToast('Masukkan Key ID dulu'); return; }
+  cameraMode = false;
+  const parsed = parseScannedValue(val);
+  showKeyDetail(parsed.id, boxId);
+}
+
+function resetToScan(){
+  stopScanner();
+  cameraMode = false;
+  history.replaceState(null, '', location.pathname);
+  document.getElementById('mainArea').innerHTML = SCAN_HOME;
+}
+
+/* ============ KEY DETAIL ============ */
+function showKeyDetail(keyId, fromBoxId){
+  const targetEl = fromBoxId ? document.getElementById('boxHubKeyResult') : document.getElementById('mainArea');
+  const last = latestEntryForKey(keyId);
+  const isTersedia = !last || last.aksi === 'kembali';
+  const currentBox = last ? last.boxId : (fromBoxId || '-');
+  const wrapStart = fromBoxId ? '' : '<div class="card">';
+  const wrapEnd = fromBoxId ? '' : '</div>';
+  const names = getNames();
+
+  targetEl.innerHTML = `
+    ${wrapStart}
+      <h3>Key <span class="idchip">${esc(keyId)}</span></h3>
+      <p class="desc">Terakhir tercatat di box: ${esc(currentBox)}</p>
+      <span class="badge ${isTersedia?'tersedia':'dipinjam'}">${isTersedia?'Tersedia':'Dipinjam oleh '+esc(last.nama||'-')}</span>
+      <div class="field" style="margin-top:16px;">
+        <label>Name (peminjam / yang mengembalikan)</label>
+        <input type="text" id="aksiNama" placeholder="Name" list="namaList" value="${esc(names[0]||'')}">
+        <datalist id="namaList">${names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+      </div>
+      <div class="field">
+        <label>Reason</label>
+        <input type="text" id="aksiCatatan" placeholder="">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-accent" onclick="prosesAksi('${esc(keyId)}','pinjam','${esc(fromBoxId||'')}')">Key Taken</button>
+        <button class="btn btn-primary" onclick="prosesAksi('${esc(keyId)}','kembali','${esc(fromBoxId||'')}')">Return the key</button>
+      </div>
+    ${wrapEnd}
+  `;
+}
+
+async function prosesAksi(keyId, aksi, fromBoxId){
+  if(busy) return;
+  fromBoxId = fromBoxId || '';
+  const nama = document.getElementById('aksiNama').value.trim();
+  const catatan = document.getElementById('aksiCatatan').value.trim();
+  if(!nama){ showToast('Nama wajib diisi'); return; }
+
+  const last = latestEntryForKey(keyId);
+  const isTersedia = !last || last.aksi === 'kembali';
+  if(aksi==='pinjam' && !isTersedia){ showToast('Kunci ini sedang dipinjam oleh '+(last.nama||'orang lain')); return; }
+  if(aksi==='kembali' && isTersedia){ showToast('Kunci ini belum dipinjam'); return; }
+
+  const boxId = fromBoxId || (last ? last.boxId : '');
+  if(!boxId){ showToast('Box tidak diketahui, scan dari dalam box terlebih dahulu'); return; }
+
+  const logEntry = { waktu:new Date().toISOString(), boxId, keyId, aksi, nama, catatan };
+  busy = true;
+  const btns = document.querySelectorAll('.btn-row .btn-accent, .btn-row .btn-primary');
+  btns.forEach(b=>b.disabled=true);
+  showToast('Memproses...');
+  const res = await apiCall('addLog', logEntry);
+  busy = false;
+  if(!res.success){
+    btns.forEach(b=>b.disabled=false);
+    showToast('Gagal update: '+(res.error||''));
+    return;
+  }
+  state.log.push(logEntry);
+  saveName(nama);
+
+  showToast(aksi==='pinjam' ? 'Taken key by '+nama : 'Kunci sudah dikembalikan');
+  showKeyDetail(keyId, fromBoxId || null);
+  if(navigator.vibrate) navigator.vibrate(80);
+  if(fromBoxId && cameraMode) setTimeout(()=>toggleBoxHubScanner(fromBoxId), 600);
+}
+
+/* ============ INIT ============ */
+async function init(){
+  await loadAllData();
+  const params = new URLSearchParams(window.location.search);
+  const keyParam = params.get('key');
+  const boxParam = params.get('box');
+  if(keyParam) showKeyDetail(clean(keyParam.trim().toUpperCase()), null);
+  else if(boxParam) renderBoxHub(clean(boxParam.trim().toUpperCase()), 'scankey');
+}
+init();
+</script>
+</body>
+</html>
